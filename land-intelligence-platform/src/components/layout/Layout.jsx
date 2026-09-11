@@ -45,7 +45,7 @@ const sidebarSections = [
   {
     title: 'SYSTEM',
     items: [
-      { label: 'Notifications', to: '/audit', icon: Bell },
+      { label: 'Notifications', to: '/notifications', icon: Bell },
       { label: 'Access Logs', to: '/audit', icon: ClipboardList },
     ]
   },
@@ -72,7 +72,7 @@ const citizenSidebarSections = [
   {
     title: 'SYSTEM',
     items: [
-      { label: 'Notifications', to: '/audit', icon: Bell },
+      { label: 'Notifications', to: '/notifications', icon: Bell },
       { label: 'Access Logs', to: '/audit', icon: ClipboardList },
     ]
   },
@@ -98,6 +98,7 @@ const researcherSidebarSections = [
   {
     title: 'SYSTEM & AUDIT',
     items: [
+      { label: 'Notifications', to: '/notifications', icon: Bell },
       { label: 'Cadastral Audit Logs', to: '/audit', icon: ClipboardList },
     ]
   },
@@ -124,6 +125,7 @@ const officerSidebarSections = [
     title: 'CASE MANAGEMENT',
     items: [
       { label: 'Shared Documents', to: '/documents', icon: FolderOpen },
+      { label: 'Notifications', to: '/notifications', icon: Bell },
       { label: 'Access Logs', to: '/audit', icon: ClipboardList },
     ]
   },
@@ -208,9 +210,10 @@ export function Header({ sidebarOpen, setSidebarOpen }) {
 
         {/* Icons */}
         <div className="flex items-center gap-1 ml-2">
-          <button className="text-blue-200 hover:text-white p-1.5 rounded hover:bg-white/10" title="Notifications">
+          <Link to="/notifications" className="relative text-blue-200 hover:text-white p-1.5 rounded hover:bg-white/10" title="Notifications">
             <Bell size={16} />
-          </button>
+            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-[#0f2d5c]"></span>
+          </Link>
           <button className="text-blue-200 hover:text-white p-1.5 rounded hover:bg-white/10" title="Help">
             <HelpCircle size={16} />
           </button>

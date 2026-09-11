@@ -58,6 +58,7 @@ export default function App() {
           <Route path="/officer" element={<OfficerDashboardPage />} />
           <Route path="/policy-brief" element={<PolicyBriefPage />} />
           <Route path="/audit" element={<AuditLogPage />} />
+          <Route path="/notifications" element={<AuditLogPage initialTab="notifications" />} />
         </Routes>
         {/* Global Toast */}
         {toast && (

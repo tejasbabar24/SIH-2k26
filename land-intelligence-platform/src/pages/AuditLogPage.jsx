@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   ClipboardList, Bell, ShieldCheck, Download, Filter, Search,
   CheckCircle, AlertOctagon, Lock, RefreshCw, Key, Globe
@@ -8,12 +9,23 @@ import { PageHeader, Card, GovButton, DemoBanner, Badge } from '../components/ui
 import { auditLogs } from '../data/documents';
 import { useApp } from '../App';
 
-export default function AuditLogPage() {
-  const [activeTab, setActiveTab] = useState('logs'); // 'logs' | 'notifications'
+export default function AuditLogPage({ initialTab }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const defaultTab = initialTab || (location.pathname === '/notifications' ? 'notifications' : 'logs');
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const [actorFilter, setActorFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [verifyingChain, setVerifyingChain] = useState(false);
   const { showToast } = useApp();
+
+  useEffect(() => {
+    if (location.pathname === '/notifications') {
+      setActiveTab('notifications');
+    } else if (location.pathname === '/audit') {
+      setActiveTab('logs');
+    }
+  }, [location.pathname]);
 
   const notifications = [
     { id: 1, title: 'Tax Assessment Renewal Pending', time: '10 mins ago', desc: 'FY 2024-25 North Taluk land revenue assessment is due for Survey 142/3-A.', type: 'alert', read: false },
@@ -110,7 +122,7 @@ export default function AuditLogPage() {
         {/* Tab Selection */}
         <div className="flex border-b border-gray-200 gap-6 text-sm font-semibold">
           <button
-            onClick={() => setActiveTab('logs')}
+            onClick={() => { setActiveTab('logs'); navigate('/audit'); }}
             className={`pb-3 border-b-2 flex items-center gap-2 transition-colors ${
               activeTab === 'logs' ? 'border-[#0f2d5c] text-[#0f2d5c]' : 'border-transparent text-gray-400 hover:text-gray-600'
             }`}
@@ -120,7 +132,7 @@ export default function AuditLogPage() {
             <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{filteredLogs.length}</span>
           </button>
           <button
-            onClick={() => setActiveTab('notifications')}
+            onClick={() => { setActiveTab('notifications'); navigate('/notifications'); }}
             className={`pb-3 border-b-2 flex items-center gap-2 transition-colors ${
               activeTab === 'notifications' ? 'border-[#0f2d5c] text-[#0f2d5c]' : 'border-transparent text-gray-400 hover:text-gray-600'
             }`}
