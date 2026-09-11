@@ -23,7 +23,7 @@ const docIcons = {
   'shield': '🛡️',
 };
 
-function DocumentCard({ doc, onView, onAI }) {
+function DocumentCard({ doc, onView, onAI, onShare }) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
       <div className="p-4">
@@ -65,11 +65,8 @@ function DocumentCard({ doc, onView, onAI }) {
           <GovButton variant="outline" size="sm" onClick={() => onView(doc)}>
             <Eye size={12} /> View
           </GovButton>
-          <GovButton variant="ghost" size="sm" onClick={() => {}}>
-            <Download size={12} /> Download
-          </GovButton>
-          <GovButton variant="ghost" size="sm" onClick={() => {}}>
-            <Share2 size={12} /> Share
+          <GovButton variant="ghost" size="sm" onClick={() => onShare(doc)}>
+            <Share2 size={12} /> Controlled Share
           </GovButton>
           <GovButton variant="green" size="sm" onClick={() => onAI(doc)}>
             <Bot size={12} /> AI Read
@@ -249,9 +246,119 @@ function AIReadModal({ doc, onClose }) {
 
         <div className="border-t border-gray-200 p-4 flex gap-2 shrink-0">
           <GovButton variant="ghost" onClick={onClose}>Close</GovButton>
-          <GovButton variant="green" size="sm" onClick={() => {}}>
-            <Share2 size={13} /> Share Analysis
+          <GovButton variant="green" size="sm" onClick={onClose}>
+            <Share2 size={13} /> Done
           </GovButton>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ShareModal({ doc, onClose }) {
+  const { showToast } = useApp();
+  const [recipient, setRecipient] = useState('Sub-Registrar Office (Haveli)');
+  const [validity, setValidity] = useState('48 Hours');
+  const [allowDownload, setAllowDownload] = useState(false);
+  const [watermark, setWatermark] = useState(true);
+  const [shared, setShared] = useState(false);
+
+  const handleShare = () => {
+    setShared(true);
+    showToast(`Access token generated for ${recipient} · Logged in Audit Trail`, 'success');
+  };
+
+  return (
+    <div className="fixed inset-0 z-[9998] bg-black/50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+        <div className="bg-[#0f2d5c] text-white px-5 py-4 rounded-t-xl flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Share2 size={16} />
+            <div>
+              <h2 className="text-base font-bold">Controlled Document Sharing</h2>
+              <p className="text-xs text-blue-300">{doc.type} · Survey {doc.surveyNumber}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-blue-300 hover:text-white"><X size={18} /></button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {!shared ? (
+            <>
+              <div>
+                <label className="text-xs font-bold text-gray-700 block mb-1">Target Recipient / Authority</label>
+                <select
+                  value={recipient}
+                  onChange={e => setRecipient(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg p-2.5 text-xs text-gray-800 focus:outline-none focus:border-[#0f2d5c]"
+                >
+                  <option>Sub-Registrar Office (Haveli)</option>
+                  <option>State Bank of India (Agri-Loan Cell)</option>
+                  <option>District Town Planning Directorate</option>
+                  <option>Designated Legal Counsel / Advocate</option>
+                  <option>Private Buyer (Watermarked Preview)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-700 block mb-1">Link Expiry Window</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['24 Hours', '48 Hours', '7 Days'].map(v => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setValidity(v)}
+                      className={`text-xs py-2 rounded-lg border font-medium transition-all ${validity === v ? 'border-[#0f2d5c] bg-[#0f2d5c]/5 text-[#0f2d5c] font-bold' : 'border-gray-200 text-gray-600'}`}
+                    >
+                      {v}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+                  <input type="checkbox" checked={watermark} onChange={e => setWatermark(e.target.checked)} className="accent-[#0f2d5c]" />
+                  <span>Enforce dynamic sovereign watermark (Bearer-bound)</span>
+                </label>
+                <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+                  <input type="checkbox" checked={allowDownload} onChange={e => setAllowDownload(e.target.checked)} className="accent-[#0f2d5c]" />
+                  <span>Allow raw document download (default: View-Only)</span>
+                </label>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-[11px] text-blue-800">
+                🛡️ <strong>Sovereign Audit Commitment:</strong> All access attempts (IP, timestamp, recipient ID) are cryptographically logged in the National Cadastre Audit Trail.
+              </div>
+
+              <div className="flex gap-2 justify-end pt-2">
+                <GovButton variant="ghost" onClick={onClose}>Cancel</GovButton>
+                <GovButton variant="primary" onClick={handleShare}>
+                  Generate Secure Token Link
+                </GovButton>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-4 space-y-3">
+              <div className="w-12 h-12 rounded-full bg-green-100 text-green-700 flex items-center justify-center mx-auto text-2xl">
+                ✓
+              </div>
+              <h3 className="font-bold text-gray-900 text-sm">Controlled Token Active</h3>
+              <p className="text-xs text-gray-500">
+                Expiring link generated for <strong>{recipient}</strong> (Valid for {validity}).
+              </p>
+              <div className="bg-gray-100 p-2.5 rounded-lg text-[10px] font-mono text-gray-700 break-all select-all">
+                https://geosynk.gov.in/vault/verify?token=sec_7a9f4c82b1d0_{doc.id}
+              </div>
+              <GovButton variant="green" size="sm" className="w-full justify-center" onClick={() => {
+                navigator.clipboard?.writeText(`https://geosynk.gov.in/vault/verify?token=sec_7a9f4c82b1d0_${doc.id}`);
+                showToast('Share link copied to clipboard', 'success');
+                onClose();
+              }}>
+                Copy Link & Done
+              </GovButton>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -263,6 +370,7 @@ export default function DocumentVaultPage() {
   const [showUpload, setShowUpload] = useState(false);
   const [viewDoc, setViewDoc] = useState(null);
   const [aiDoc, setAiDoc] = useState(null);
+  const [shareDoc, setShareDoc] = useState(null);
   const [filterParcel, setFilterParcel] = useState('all');
 
   if (!role) {
@@ -324,6 +432,7 @@ export default function DocumentVaultPage() {
               doc={doc}
               onView={(d) => setViewDoc(d)}
               onAI={(d) => setAiDoc(d)}
+              onShare={(d) => setShareDoc(d)}
             />
           ))}
         </div>
@@ -362,6 +471,7 @@ export default function DocumentVaultPage() {
 
       {showUpload && <UploadModal onClose={() => setShowUpload(false)} />}
       {aiDoc && <AIReadModal doc={aiDoc} onClose={() => setAiDoc(null)} />}
+      {shareDoc && <ShareModal doc={shareDoc} onClose={() => setShareDoc(null)} />}
     </PageLayout>
   );
 }

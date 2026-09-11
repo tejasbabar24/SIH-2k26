@@ -36,6 +36,7 @@ export default function PolicySimulatorPage() {
   const [simulating, setSimulating] = useState(false);
   const [results, setResults] = useState(null);
   const [hasRun, setHasRun] = useState(false);
+  const [compareMode, setCompareMode] = useState(false);
 
   // Guard: Restrict access to Government Officers only
   if (role !== 'officer') {
@@ -169,8 +170,11 @@ export default function PolicySimulatorPage() {
               </GovButton>
 
               <div className="grid grid-cols-2 gap-2">
-                <GovButton variant="outline" size="sm" className="justify-center" onClick={() => showToast('Compare scenario feature — demo', 'success')}>
-                  <GitCompare size={13} /> Compare
+                <GovButton variant={compareMode ? "primary" : "outline"} size="sm" className="justify-center" onClick={() => {
+                  setCompareMode(!compareMode);
+                  showToast(compareMode ? 'Returned to single view' : 'Side-by-side scenario comparison active', 'success');
+                }}>
+                  <GitCompare size={13} /> {compareMode ? 'Exit Compare' : 'Compare'}
                 </GovButton>
                 <GovButton variant="outlineGreen" size="sm" className="justify-center" onClick={() => navigate('/policy-brief')}>
                   <FileText size={13} /> Brief
@@ -195,6 +199,60 @@ export default function PolicySimulatorPage() {
 
         {/* Right: Results */}
         <div className="lg:col-span-2 space-y-4">
+          {/* Side-by-Side Scenario Comparison Mode */}
+          {compareMode && (
+            <div className="bg-white border-2 border-[#0f2d5c] rounded-xl p-5 shadow-md space-y-4">
+              <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+                <div className="flex items-center gap-2">
+                  <GitCompare size={18} className="text-[#0f2d5c]" />
+                  <h3 className="font-bold text-gray-900 text-base">Scenario Comparison Matrix</h3>
+                </div>
+                <span className="text-xs font-mono bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded font-bold">
+                  {timeHorizon}-Year Horizon · {policyRegions.find(r => r.id === region)?.label || region}
+                </span>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                {/* Scenario A */}
+                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50/50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#0f2d5c] uppercase tracking-wider">Scenario A (Current Draft)</span>
+                    <Badge color={liveResults.riskColor}>{liveResults.riskLevel}</Badge>
+                  </div>
+                  <p className="text-sm font-bold text-gray-800">{conversionPct}% Agri-Land Conversion</p>
+                  <div className="space-y-1.5 text-xs text-gray-600">
+                    <div className="flex justify-between"><span>Economic Yield:</span> <strong className="text-green-700">₹{r.economicYield} Cr ({r.economicChange})</strong></div>
+                    <div className="flex justify-between"><span>Employment Creation:</span> <strong className="text-green-700">{r.employmentChange}</strong></div>
+                    <div className="flex justify-between"><span>Food Security Risk:</span> <strong className="text-red-600">{r.foodSecurityChange}</strong></div>
+                    <div className="flex justify-between"><span>Water Stress:</span> <strong className="text-blue-700">{r.waterStressChange}</strong></div>
+                  </div>
+                </div>
+
+                {/* Scenario B */}
+                <div className="border border-green-300 rounded-lg p-4 bg-green-50/30 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-green-800 uppercase tracking-wider">Scenario B (Controlled Eco-Buffer)</span>
+                    <Badge color="green">Low-Moderate Risk</Badge>
+                  </div>
+                  <p className="text-sm font-bold text-gray-800">15% Regulated Conversion + Green Belt</p>
+                  <div className="space-y-1.5 text-xs text-gray-600">
+                    <div className="flex justify-between"><span>Economic Yield:</span> <strong className="text-green-700">+12% Sustainable Yield</strong></div>
+                    <div className="flex justify-between"><span>Employment Creation:</span> <strong className="text-green-700">+9% Local Agro-Allied Jobs</strong></div>
+                    <div className="flex justify-between"><span>Food Security Risk:</span> <strong className="text-green-700">-3% (Within Resilience Limits)</strong></div>
+                    <div className="flex justify-between"><span>Water Stress:</span> <strong className="text-green-700">-6% (Groundwater Safe Zone)</strong></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between text-xs text-blue-900">
+                <span>Scenario B retains 85% prime agricultural acreage while meeting 70% of commercial demand.</span>
+                <GovButton variant="outlineGreen" size="sm" onClick={() => navigate('/policy-brief')}>
+                  Export Comparative Brief →
+                </GovButton>
+              </div>
+            </div>
+          )}
+
           {/* KPI impacts */}
           <div>
             <p className="text-sm font-bold text-gray-700 mb-3">Impact Assessment — {conversionPct}% Conversion · {timeHorizon}-Year Horizon</p>

@@ -1,0 +1,10 @@
+{
+  "buildCommand": "cd land-intelligence-platform && npm install && npm run build",
+  "outputDirectory": "land-intelligence-platform/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

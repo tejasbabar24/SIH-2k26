@@ -1,0 +1,10 @@
+{
+  "name": "sih-2k26",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix land-intelligence-platform",
+    "build": "npm run build --prefix land-intelligence-platform",
+    "preview": "npm run preview --prefix land-intelligence-platform"
+  }
+}

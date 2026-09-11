@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
-import { User, Map, FolderOpen, ChevronRight, Download, Plus, Gift, ExternalLink } from 'lucide-react';
+import { User, Map, FolderOpen, ChevronRight, Download, Plus, Gift, ExternalLink, AlertCircle, Clock, CheckCircle2, FileText, X, ShieldAlert } from 'lucide-react';
 import { PageLayout } from '../components/layout/Layout';
 import { PageHeader, Card, GovButton, DemoBanner, Badge, InfoRow } from '../components/ui';
 import { mockParcels, parcelGeoJSON } from '../data/parcels';
@@ -30,6 +30,20 @@ export default function CitizenPortalPage() {
   const { role, setLoginModal, showToast } = useApp();
   const navigate = useNavigate();
   const [activeParcel, setActiveParcel] = useState(0);
+  const [showGrievanceModal, setShowGrievanceModal] = useState(false);
+  const [showRenewalModal, setShowRenewalModal] = useState(false);
+  const [disputes, setDisputes] = useState([
+    {
+      id: 'DISP-2026-0412',
+      title: 'Boundary Demarcation & Survey Correction',
+      parcelId: 'MH-PN-4091',
+      surveyNo: '142/3-A',
+      date: '12 Jan 2026',
+      status: 'Under Field Inspection',
+      officer: 'Talathi Circle 4 (S. B. Jadhav)',
+      stage: 3,
+    }
+  ]);
 
   if (!role || role !== 'citizen') {
     return (
@@ -71,7 +85,7 @@ export default function CitizenPortalPage() {
             <GovButton variant="outline" size="sm" onClick={() => showToast('Add parcel — demo mode', 'success')}>
               <Plus size={14} /> Add Parcel
             </GovButton>
-            <GovButton variant="green" size="sm" onClick={() => showToast('PDF download simulated', 'success')}>
+            <GovButton variant="green" size="sm" onClick={() => { window.print(); showToast('Compiling official Land Profile Dossier (PDF)...', 'success'); }}>
               <Download size={14} /> Download Land Profile (PDF)
             </GovButton>
           </>
@@ -84,7 +98,7 @@ export default function CitizenPortalPage() {
         <p className="text-xs text-amber-800">
           <strong>Tax receipt expires in 12 days</strong> · FY 2024-25 North Taluk Revenue Assessment
         </p>
-        <button className="ml-auto text-xs text-amber-700 font-semibold hover:underline">Renew Online →</button>
+        <button onClick={() => setShowRenewalModal(true)} className="ml-auto text-xs text-amber-700 font-semibold hover:underline">Renew Online →</button>
       </div>
 
       <div className="p-6">
@@ -184,6 +198,54 @@ export default function CitizenPortalPage() {
                 ))}
               </div>
             </div>
+
+            {/* Land Dispute & Grievance Tracker */}
+            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                    <ShieldAlert size={18} className="text-[#0f2d5c]" />
+                    Land Dispute & Grievance Tracker
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-0.5">Track land boundary disputes, mutation rectifications, and revenue objections</p>
+                </div>
+                <GovButton variant="outline" size="sm" onClick={() => setShowGrievanceModal(true)}>
+                  <Plus size={13} /> Lodge Grievance
+                </GovButton>
+              </div>
+
+              {disputes.map((d) => (
+                <div key={d.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-3">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono font-bold text-[#0f2d5c] bg-blue-100 px-2 py-0.5 rounded">{d.id}</span>
+                        <span className="text-sm font-bold text-gray-800">{d.title}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Parcel: {d.parcelId} · Survey {d.surveyNo} · Assigned: {d.officer}</p>
+                    </div>
+                    <Badge color="orange">● {d.status}</Badge>
+                  </div>
+
+                  {/* Stepper */}
+                  <div className="grid grid-cols-4 gap-2 pt-2 border-t border-gray-200 text-center">
+                    {[
+                      { step: 1, label: 'Lodge Grievance' },
+                      { step: 2, label: 'Talathi Scrutiny' },
+                      { step: 3, label: 'Field Survey' },
+                      { step: 4, label: 'Order / Rectification' },
+                    ].map((s) => (
+                      <div key={s.step} className="space-y-1">
+                        <div className={`h-1.5 rounded-full ${s.step <= d.stage ? 'bg-[#1a6b3c]' : 'bg-gray-200'}`} />
+                        <p className={`text-[10px] ${s.step === d.stage ? 'font-bold text-[#1a6b3c]' : 'text-gray-400'}`}>
+                          {s.label}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Right sidebar */}
@@ -275,6 +337,97 @@ export default function CitizenPortalPage() {
           </div>
         </div>
       </div>
+
+      {/* Grievance Lodging Modal */}
+      {showGrievanceModal && (
+        <div className="fixed inset-0 z-[9998] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div className="bg-[#0f2d5c] text-white px-5 py-4 rounded-t-xl flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldAlert size={18} />
+                <h3 className="font-bold text-base">Lodge Land Dispute / Grievance</h3>
+              </div>
+              <button onClick={() => setShowGrievanceModal(false)} className="text-blue-200 hover:text-white"><X size={18} /></button>
+            </div>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const newGrievance = {
+                id: `DISP-2026-0${Math.floor(400 + Math.random() * 500)}`,
+                title: 'Encroachment / Boundary Verification',
+                parcelId: citizenParcels[activeParcel].id,
+                surveyNo: citizenParcels[activeParcel].surveyNumber,
+                date: 'Today',
+                status: 'Submitted to Tehsildar',
+                officer: 'Revenue Circle Office',
+                stage: 1,
+              };
+              setDisputes([newGrievance, ...disputes]);
+              setShowGrievanceModal(false);
+              showToast('Grievance logged with official Token ID', 'success');
+            }} className="p-5 space-y-3">
+              <div>
+                <label className="text-xs font-bold text-gray-700 block mb-1">Select Parcel</label>
+                <select className="w-full border border-gray-300 rounded-lg p-2.5 text-xs">
+                  {citizenParcels.map(p => (
+                    <option key={p.id}>{p.id} · Survey {p.surveyNumber} ({p.nickname})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-700 block mb-1">Dispute Classification</label>
+                <select className="w-full border border-gray-300 rounded-lg p-2.5 text-xs">
+                  <option>Boundary Demarcation & Area Correction (Hissa Survey)</option>
+                  <option>Encroachment on Sovereign Right of Way (Panand Road)</option>
+                  <option>Mutation Record Discrepancy (Ferfar Correction)</option>
+                  <option>Heirship / Succession Name Rectification</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-700 block mb-1">Details / Grounds for Objection</label>
+                <textarea rows={3} placeholder="Provide survey coordinates, neighboring boundaries or discrepancy notes..." className="w-full border border-gray-300 rounded-lg p-2.5 text-xs" required />
+              </div>
+              <div className="flex gap-2 justify-end pt-2">
+                <GovButton variant="ghost" type="button" onClick={() => setShowGrievanceModal(false)}>Cancel</GovButton>
+                <GovButton variant="primary" type="submit">Submit to Taluk Office</GovButton>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Tax Renewal Modal */}
+      {showRenewalModal && (
+        <div className="fixed inset-0 z-[9998] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div className="bg-[#1a6b3c] text-white px-5 py-4 rounded-t-xl flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={18} />
+                <h3 className="font-bold text-base">Renew Land Revenue Assessment</h3>
+              </div>
+              <button onClick={() => setShowRenewalModal(false)} className="text-green-200 hover:text-white"><X size={18} /></button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-xs text-green-900 space-y-1">
+                <p><strong>Assessment Period:</strong> FY 2025-26</p>
+                <p><strong>Total Annual Cess:</strong> ₹1,240.00 (Haveli Circle)</p>
+                <p><strong>Payer:</strong> Rajesh Sharma (Survey 142/3-A)</p>
+              </div>
+              <p className="text-xs text-gray-500">
+                Direct integration with State Treasury e-Challan / MahaDBT Payment Gateway.
+              </p>
+              <div className="flex gap-2 justify-end">
+                <GovButton variant="ghost" onClick={() => setShowRenewalModal(false)}>Cancel</GovButton>
+                <GovButton variant="green" onClick={() => {
+                  setShowRenewalModal(false);
+                  showToast('Assessment paid & sealed receipt deposited into Document Vault', 'success');
+                }}>
+                  Pay via UPI / e-Challan (₹1,240)
+                </GovButton>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </PageLayout>
   );
 }

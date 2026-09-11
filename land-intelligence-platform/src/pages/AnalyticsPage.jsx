@@ -27,7 +27,18 @@ export default function AnalyticsPage() {
   };
 
   const handleExport = () => {
-    showToast('CSV export simulated — demo mode', 'success');
+    const headers = "Year,District,Agricultural_Cover_Ha,Forest_Canopy_Ha,Commercial_Ha,Residential_Ha,Water_Bodies_Ha\n";
+    const trends = data?.trends || [];
+    const rows = trends.map(r => `${r.year},${selectedDistrict},${r.agri},${r.forest},${r.commercial},${r.residential},${r.water}`).join("\n");
+    const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `geosynk_land_analytics_${selectedDistrict}_${selectedYear}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast(`Exported ${selectedDistrict.toUpperCase()} land-use dataset (.CSV) for thesis/research`, 'success');
   };
 
   const handleReport = () => {

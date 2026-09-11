@@ -50,6 +50,21 @@ const suggestions = [
     tagColor: 'orange',
     detail: 'Despite commercial zoning, the parcel\'s soil quality supports high-yield agriculture. Could be used for contract farming or urban agriculture initiatives pending zoning revision.'
   },
+  {
+    rank: 4,
+    title: 'Urban Congestion Mitigation & Multi-Tier EV Parking',
+    icon: '🚗',
+    suitability: 89,
+    pros: [
+      'Mitigates high-density corridor bottlenecks (Dagdusheth / Core Market archetype)',
+      '30% mandatory vertical greenery & stormwater harvesting reserve',
+      'Smart multi-tier automated EV parking with pedestrianized transit plaza'
+    ],
+    cons: ['Requires inter-departmental NOC from Municipal Corporation and Traffic Police', 'Structured under Municipal Public-Private Partnership (PPP)'],
+    tag: 'High Impact Priority',
+    tagColor: 'green',
+    detail: 'Spatial traffic & land-use composition analysis identifies severe peak bottlenecks. Proposes an automated multi-layer parking infrastructure with integrated ground-level pedestrian plazas, reducing street blockage by 44% and preserving local green cover.'
+  },
 ];
 
 export default function DevSuggestionsPage() {

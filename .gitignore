@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Production build outputs
+dist/
+dist-ssr/
+build/
+*/dist/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Deploy & Environment
+.vercel
+.netlify
+.env
+.env.local
+*.local
+
+# OS and Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
