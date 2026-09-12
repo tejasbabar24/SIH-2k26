@@ -28,3 +28,15 @@ pnpm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# Local archives and recovery copies
+*.zip
+incoming-sih-update/
+frontend-before-team-update/
+
+# Backend secrets and local RAG source documents
+backend/.env
+backend/.venv/
+backend/__pycache__/
+backend/**/*.py[cod]
+backend/data/

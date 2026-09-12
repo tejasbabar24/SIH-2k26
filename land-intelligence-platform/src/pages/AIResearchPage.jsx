@@ -8,6 +8,7 @@ import { PageLayout } from '../components/layout/Layout';
 import { PageHeader, Card, GovButton, DemoBanner, Badge } from '../components/ui';
 import { researchQuestions, researchResponses } from '../data/research';
 import { useApp } from '../App';
+import { queryResearchAssistant } from '../services/api';
 
 const TYPING_DELAY = 1800;
 
@@ -83,17 +84,24 @@ function SourceBadge({ source }) {
   const { showToast } = useApp();
   const copyCitation = (format = 'APA') => {
     const text = format === 'APA'
-      ? `${source.name} (${source.year}). Spatial Cadastre & Land Dynamics Database. Government of India.`
+      ? `${source.name}. ${source.pageLabel || source.year}. ${source.url || 'Official government source.'}`
       : `@misc{geosynk_${source.year}, author = {${source.name}}, title = {National Land Cadastre Data}, year = {${source.year}}}`;
     navigator.clipboard?.writeText(text);
     showToast(`${format} citation copied to clipboard`, 'success');
   };
 
   return (
-    <div className="flex items-center gap-2 py-1.5 border-b border-gray-100 last:border-0">
+    <div className="flex items-center gap-2 py-2 border-b border-gray-100 last:border-0">
       <CheckCircle size={13} className="text-[#1a6b3c] shrink-0" />
-      <span className="text-xs text-gray-700">{source.name}</span>
-      <span className="ml-auto text-[10px] text-gray-400 font-medium mr-2">{source.year}</span>
+      <div className="min-w-0">
+        {source.url && source.url !== '#' ? (
+          <a href={source.url} target="_blank" rel="noreferrer" className="text-xs text-[#0f2d5c] font-medium hover:underline">
+            {source.name}
+          </a>
+        ) : <span className="text-xs text-gray-700">{source.name}</span>}
+        <p className="text-[10px] text-gray-400 mt-0.5">{source.pageLabel || source.year}</p>
+      </div>
+      {source.url && source.url !== '#' && <ExternalLink size={12} className="ml-auto text-[#1a6b3c] shrink-0" />}
       <button
         onClick={() => copyCitation('APA')}
         title="Copy APA Citation"
@@ -182,8 +190,8 @@ function MessageBubble({ msg }) {
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
                   <BookOpen size={11} /> SOURCES
                 </p>
-                <span className="text-[10px] font-bold text-[#1a6b3c] bg-green-50 px-2 py-0.5 rounded">
-                  {resp.groundedness}% DATA GROUNDED
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${resp.isLive ? 'text-[#1a6b3c] bg-green-50' : 'text-amber-700 bg-amber-50'}`}>
+                  {resp.isLive ? `${resp.groundedness}% RAG GROUNDED` : 'DEMO FALLBACK'}
                 </span>
               </div>
               {resp.sources.map((s, i) => <SourceBadge key={i} source={s} />)}
@@ -192,8 +200,8 @@ function MessageBubble({ msg }) {
         </div>
 
         <p className="text-[10px] text-gray-400 mt-1.5 ml-1 flex items-center gap-1">
-          <AlertTriangle size={10} className="text-amber-400" />
-          Simulated AI response for prototype. Not real AI.
+          {resp.isLive ? <CheckCircle size={10} className="text-green-600" /> : <AlertTriangle size={10} className="text-amber-400" />}
+          {resp.isLive ? 'Live RAG response grounded in approved government sources.' : 'Demo fallback shown because the live RAG API is unavailable.'}
         </p>
       </div>
     </div>
@@ -206,6 +214,7 @@ export default function AIResearchPage() {
   const [messages, setMessages] = useState([]);
   const [inputVal, setInputVal] = useState('');
   const [typing, setTyping] = useState(false);
+  const [apiMode, setApiMode] = useState('checking');
   const [notebookNotes, setNotebookNotes] = useState(initialNotebookNotes);
   const [showAddNote, setShowAddNote] = useState(false);
   const chatEndRef = useRef(null);
@@ -223,9 +232,10 @@ export default function AIResearchPage() {
 
     setMessages(prev => [...prev, { role: 'user', content: q }]);
     setTyping(true);
+    setApiMode('checking');
 
-    setTimeout(() => {
-      const resp = researchResponses[q] || {
+    setTimeout(async () => {
+      const fallback = researchResponses[q] || {
         answer: `Based on available land records and spatial data for the query: "${q}"\n\nThis query matches partial data in our knowledge base. For a detailed analysis, please try one of the predefined research questions or consult the full analytics dashboard for regional land-use statistics.\n\nOur system has indexed data from ISRO Bhuvan, State Revenue Departments, and the National Cadastral Survey 2023-24 covering all 28+ states.`,
         sources: [
           { name: "National Cadastral Survey 2023-24", verified: true, year: "2024" },
@@ -234,8 +244,31 @@ export default function AIResearchPage() {
         groundedness: 72.0,
         chartData: null
       };
-      setTyping(false);
-      setMessages(prev => [...prev, { role: 'assistant', response: resp }]);
+      try {
+        const apiResponse = await queryResearchAssistant(q);
+        const resp = {
+          ...fallback,
+          answer: apiResponse.answer,
+          groundedness: Math.round(apiResponse.confidence * 100),
+          isLive: true,
+          sources: apiResponse.sources.map(source => ({
+            name: source.title,
+            year: String(source.year),
+            verified: source.status === 'approved',
+            url: source.sourceUrl || source.fileUrl,
+            pageLabel: source.pageRanges?.length
+              ? source.pageRanges.map(range => `pp. ${range.pageStart}-${range.pageEnd}`).join(', ')
+              : `pp. ${source.pageStart}-${source.pageEnd}`,
+          })),
+        };
+        setMessages(prev => [...prev, { role: 'assistant', response: resp }]);
+        setApiMode('live');
+      } catch {
+        setMessages(prev => [...prev, { role: 'assistant', response: { ...fallback, isLive: false } }]);
+        setApiMode('fallback');
+      } finally {
+        setTyping(false);
+      }
     }, TYPING_DELAY);
   };
 
@@ -252,6 +285,7 @@ export default function AIResearchPage() {
         subtitle="Natural-language intelligence, authoritative peer-reviewed papers, and collaborative student field notes."
         actions={
           <div className="flex items-center gap-2">
+            <DemoBanner message={apiMode === 'live' ? 'LIVE RAG · APPROVED GOVERNMENT SOURCES' : apiMode === 'checking' ? 'CHECKING LIVE RAG CONNECTION...' : 'DEMO FALLBACK · START BACKEND API'} />
             <button
               onClick={() => setActiveTab('assistant')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all
@@ -327,7 +361,7 @@ export default function AIResearchPage() {
                     Select a demo question on the left or type your own.
                   </p>
                   <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 mt-4">
-                    ⚠ Prototype — responses are simulated for demonstration purposes
+                    Ask a question to verify the live RAG connection. The interface will clearly show whether it used approved sources or demo fallback.
                   </p>
                 </div>
               )}
@@ -372,7 +406,7 @@ export default function AIResearchPage() {
                 </button>
               </form>
               <p className="text-[10px] text-gray-400 mt-2 text-center">
-                Simulated AI · Data grounded in ISRO, Revenue Dept, DILRMP records · Prototype only
+                Live mode: answers are retrieved from approved government sources. Demo fallback appears only when the backend is unavailable.
               </p>
             </div>
           </div>

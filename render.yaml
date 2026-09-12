@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: bhunirnay-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: FRONTEND_ORIGINS
+        sync: false
+      - key: FRONTEND_ORIGIN_REGEX
+        value: https://.*\\.vercel\\.app
+      - key: EMBEDDING_MODEL
+        value: gemini-embedding-001
+      - key: EMBEDDING_DIMENSIONS
+        value: "768"
+      - key: GENERATION_MODEL
+        value: gemini-3.7-flash
+      - key: RAG_EMBED_BATCH_SIZE
+        value: "1"
+      - key: RAG_EMBED_DELAY_SECONDS
+        value: "4"
