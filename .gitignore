@@ -1,0 +1,21 @@
+# Local archives, staging copies, and recoverable frontend backups
+*.zip
+incoming-sih-update/
+frontend-before-team-update/
+
+# Backend secrets and local RAG working data
+backend/.env
+backend/.venv/
+backend/__pycache__/
+backend/**/*.py[cod]
+backend/data/
+
+# Frontend dependencies and generated builds
+**/node_modules/
+**/dist/
+**/.vite/
+
+# Editor and operating-system files
+.DS_Store
+Thumbs.db
+.vscode/

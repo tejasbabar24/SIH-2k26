@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --navy: #0f2d5c;
+    --navy-light: #1a3f7a;
+    --gov-green: #1a6b3c;
+    --gov-green-light: #228b4e;
+    --accent-orange: #e07b2a;
+    --bg-light: #f0f4f8;
+    --bg-white: #ffffff;
+    --border-light: #d1dce8;
+    --text-primary: #0f2040;
+    --text-secondary: #4a5e78;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #f0f4f8;
+    color: #0f2040;
+    margin: 0;
+    padding: 0;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #f0f4f8;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #c5d2e0;
+    border-radius: 2px;
+  }
+}
+
+/* Leaflet overrides */
+.leaflet-container {
+  font-family: inherit;
+  z-index: 0;
+}
+.leaflet-control-zoom a {
+  border-radius: 4px !important;
+}
+
+/* Map popup */
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
