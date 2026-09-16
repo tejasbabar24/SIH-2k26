@@ -7,7 +7,7 @@ import HomePage from './pages/HomePage';
 import OfficerLoginPage from './pages/OfficerLoginPage';
 import GISMapPage from './pages/GISMapPage';
 import Parcel360Page from './pages/Parcel360Page';
-import AnalyticsPage from './pages/AnalyticsPage';
+import AnalyticsPage from './pages/AnalyticsPage';  
 import AIResearchPage from './pages/AIResearchPage';
 import PolicySimulatorPage from './pages/PolicySimulatorPage';
 import DevSuggestionsPage from './pages/DevSuggestionsPage';
