@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "npm run dev --prefix land-intelligence-platform",
+    "dev:backend": "npm run dev --prefix backend",
     "build": "npm run build --prefix land-intelligence-platform",
     "preview": "npm run preview --prefix land-intelligence-platform"
   }

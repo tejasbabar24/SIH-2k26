@@ -1,9 +1,10 @@
 import React, { useState, createContext, useContext } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
 
 // Pages
 import HomePage from './pages/HomePage';
+import OfficerLoginPage from './pages/OfficerLoginPage';
 import GISMapPage from './pages/GISMapPage';
 import Parcel360Page from './pages/Parcel360Page';
 import AnalyticsPage from './pages/AnalyticsPage';
@@ -45,6 +46,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/officer-login" element={<OfficerLoginPage />} />
           <Route path="/gis" element={<GISMapPage />} />
           <Route path="/parcel360" element={<Parcel360Page />} />
           <Route path="/parcel360/:id" element={<Parcel360Page />} />
@@ -79,11 +81,18 @@ export default function App() {
 
 function LoginModal({ onClose, setRole, showToast }) {
   const { setLoginModal } = useApp();
+  const navigate = useNavigate();
 
   const handleRole = (r) => {
+    if (r === 'officer') {
+      // Officer goes through 4-step verification flow
+      setLoginModal(false);
+      navigate('/officer-login');
+      return;
+    }
     setRole(r);
     setLoginModal(false);
-    showToast(`Signed in as ${r === 'citizen' ? 'Citizen (Rajesh Sharma)' : r === 'officer' ? 'Govt Officer (Vikramaditya Singh, IAS)' : 'Researcher (Dr. S. Mukherjee)'}`, 'success');
+    showToast(`Signed in as ${r === 'citizen' ? 'Citizen (Rajesh Sharma)' : 'Researcher (Dr. S. Mukherjee)'}`, 'success');
   };
 
   return (
@@ -121,7 +130,7 @@ function LoginModal({ onClose, setRole, showToast }) {
               <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-xl">🏛️</div>
               <div>
                 <div className="font-semibold text-gray-800 group-hover:text-[#0f2d5c]">Government Officer — Vikramaditya Singh, IAS</div>
-                <div className="text-xs text-gray-500">Analyze land data and simulate policies</div>
+                <div className="text-xs text-gray-500">Analyze land data and simulate policies · 4-step verification</div>
               </div>
             </div>
           </button>
