@@ -39,6 +39,7 @@ const otpLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 5,
   message: { error: 'Too many OTP requests. Please wait 10 minutes.' },
+  skip: (req) => isDemoOfficer(req.body?.email?.trim().toLowerCase()),
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -142,13 +143,14 @@ router.post('/verify-otp', verifyLimiter, async (req, res) => {
       if (otpStr !== DEMO_OFFICER.otp) {
         return res.status(400).json({ error: 'Invalid OTP. Demo OTP is 123456.' });
       }
-      // Demo officer is pre-approved — issue a registration token that skips step 3
-      const token = jwt.sign(
-        { email: normalised, scope: 'registration', isDemo: true },
-        process.env.JWT_SECRET,
-        { expiresIn: '15m' }
-      );
-      return res.json({ success: true, token, isDemo: true });
+      const dashboardToken = issueDashboardToken(DEMO_OFFICER);
+      return res.json({
+        success: true,
+        dashboardToken,
+        officer: DEMO_OFFICER,
+        isDemo: true,
+        status: 'approved',
+      });
     }
 
     // ── Real path ─────────────────────────────────────────────────────────────
@@ -172,6 +174,40 @@ router.post('/verify-otp', verifyLimiter, async (req, res) => {
     }
 
     await supabase.from('officer_otps').update({ verified: true }).eq('email', normalised);
+
+    const { data: existingOfficer, error: officerErr } = await supabase
+      .from('officers')
+      .select('id, full_name, email, employee_id, department, designation, district, status, created_at')
+      .eq('email', normalised)
+      .maybeSingle();
+
+    if (officerErr) {
+      console.error('Officer lookup error:', officerErr);
+      return res.status(500).json({ error: 'Could not load officer profile. Try again.' });
+    }
+
+    if (existingOfficer?.status === 'approved') {
+      return res.json({
+        success: true,
+        status: 'approved',
+        officer: existingOfficer,
+        dashboardToken: issueDashboardToken(existingOfficer),
+      });
+    }
+
+    if (existingOfficer) {
+      const pendingToken = jwt.sign(
+        { email: normalised, officerId: existingOfficer.id, scope: 'pending', status: existingOfficer.status },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+      return res.json({
+        success: true,
+        status: existingOfficer.status,
+        officer: existingOfficer,
+        pendingToken,
+      });
+    }
 
     const token = jwt.sign(
       { email: normalised, scope: 'registration' },

@@ -245,8 +245,8 @@ function Step2({ email, onNext, onResend }) {
     setError('');
     try {
       const data = await verifyOtp(email, code);
-      // data.token is the 15-min registration JWT
-      onNext({ token: data.token });
+      // Approved users receive a dashboard token; new users receive a registration token.
+      onNext(data);
     } catch (err) {
       setError(err.message || 'Invalid OTP. Try again.');
       setOtp(['', '', '', '', '', '']);
@@ -770,8 +770,24 @@ export default function OfficerLoginPage() {
     setStep(1);
   };
 
-  // Step 2 → 3: OTP verified, registration token received
-  const handleStep2 = ({ token }) => {
+  // Step 2: approved officers go directly to the dashboard; new officers complete their profile.
+  const handleStep2 = ({ token, dashboardToken, pendingToken, officer }) => {
+    if (dashboardToken) {
+      handleApproved(dashboardToken, officer);
+      return;
+    }
+    if (pendingToken) {
+      setProfile({
+        name: officer.full_name,
+        empId: officer.employee_id,
+        dept: officer.department,
+        designation: officer.designation,
+        district: officer.district,
+      });
+      setPendingToken(pendingToken);
+      setStep(3);
+      return;
+    }
     setRegToken(token);
     setStep(2);
   };
