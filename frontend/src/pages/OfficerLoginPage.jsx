@@ -89,8 +89,8 @@ function Step1({ onNext }) {
     e.preventDefault();
     const trimmed = email.trim().toLowerCase();
     if (!trimmed) { setError('Please enter your government email.'); return; }
-    if (!trimmed.endsWith('.gov.in') && !trimmed.endsWith('.nic.in')) {
-      setError('Only @gov.in or @nic.in email addresses are accepted.');
+    if (!trimmed.endsWith('.gov.in') && !trimmed.endsWith('.nic.in') && !trimmed.endsWith('.com')) {
+      setError('Only @gov.in, @nic.in, or .com email addresses are accepted.');
       return;
     }
 
@@ -155,7 +155,7 @@ function Step1({ onNext }) {
               type="email"
               value={email}
               onChange={e => { setEmail(e.target.value); setError(''); }}
-              placeholder="Enter your @gov.in / @nic.in email"
+              placeholder="Enter your @gov.in / @nic.in / .com email"
               className="w-full bg-[#1a3f7a] border border-blue-600 text-white placeholder-blue-400 rounded-lg pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-[#4ade80] focus:ring-1 focus:ring-[#4ade80]/30 transition-all"
             />
           </div>

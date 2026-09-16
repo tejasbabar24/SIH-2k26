@@ -55,7 +55,7 @@ function generateOtp() {
 }
 
 function isGovEmail(email) {
-  return email.endsWith('.gov.in') || email.endsWith('.nic.in');
+  return email.endsWith('.gov.in') || email.endsWith('.nic.in') || email.endsWith('.com');
 }
 
 function issueDashboardToken(officer) {
@@ -75,7 +75,7 @@ router.post('/send-otp', otpLimiter, async (req, res) => {
     }
     const normalised = email.trim().toLowerCase();
     if (!isGovEmail(normalised)) {
-      return res.status(400).json({ error: 'Only @gov.in or @nic.in email addresses are accepted.' });
+      return res.status(400).json({ error: 'Only @gov.in, @nic.in, or .com email addresses are accepted.' });
     }
 
     // ── DEMO OFFICER: fixed OTP, no DB or email needed ───────────────────────
