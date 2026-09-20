@@ -19,6 +19,10 @@ from supabase import Client, create_client
 from app.config import Settings
 
 
+class TemporaryGenerationUnavailable(RuntimeError):
+    """Gemini could not generate an answer after bounded, quota-safe retries."""
+
+
 @dataclass(frozen=True)
 class ExtractedChunk:
     content: str
@@ -206,7 +210,7 @@ class RagService:
         return response.data or []
 
     def generate_grounded_answer(self, prompt: str, max_attempts: int = 4) -> str:
-        """Retry only transient provider failures; never replace an answer with invented text."""
+        """Retry transient Gemini failures without manufacturing an answer."""
         for attempt in range(max_attempts):
             try:
                 generated = self.gemini.models.generate_content(
@@ -217,7 +221,11 @@ class RagService:
                 return generated.text or "The model returned an empty response."
             except (ClientError, ServerError) as error:
                 if getattr(error, "code", None) not in (429, 503) or attempt == max_attempts - 1:
+                    if getattr(error, "code", None) in (429, 503):
+                        raise TemporaryGenerationUnavailable from error
                     raise
+                # This is deliberately bounded: 4, 8 and 16 seconds by default.
+                # It keeps free-tier requests polite and avoids an infinite wait.
                 time.sleep(min(self.settings.rag_embed_delay_seconds * (2 ** attempt), 30))
         raise RuntimeError("Generation retries were exhausted.")
 
@@ -258,8 +266,20 @@ Evidence:
             page_range = {"pageStart": match["page_start"], "pageEnd": match["page_end"]}
             if page_range not in unique_sources[match["document_id"]]["pageRanges"]:
                 unique_sources[match["document_id"]]["pageRanges"].append(page_range)
-        return {
-            "answer": self.generate_grounded_answer(prompt),
+        result = {
             "confidence": round(sum(float(item["similarity"]) for item in matches) / len(matches), 3),
             "sources": list(unique_sources.values()),
+            "generationStatus": "ready",
         }
+        try:
+            result["answer"] = self.generate_grounded_answer(prompt)
+        except TemporaryGenerationUnavailable:
+            # Retrieval succeeded. Keep that auditable evidence visible instead of
+            # returning a fake answer or concealing useful citations behind a 503.
+            result["answer"] = (
+                "Verified government-source evidence was retrieved, but the AI answer "
+                "generator is temporarily rate-limited. Please retry shortly; the sources "
+                "below remain available for review."
+            )
+            result["generationStatus"] = "rate_limited"
+        return result

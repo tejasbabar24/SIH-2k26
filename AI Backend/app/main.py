@@ -107,7 +107,12 @@ def ai_query(payload: AIQuery):
         }
         for source in result["sources"]
     ]
-    return {"answer": result["answer"], "confidence": result["confidence"], "sources": sources}
+    return {
+        "answer": result["answer"],
+        "confidence": result["confidence"],
+        "sources": sources,
+        "generationStatus": result.get("generationStatus", "ready"),
+    }
 
 
 @app.post("/api/v1/policy-simulations")

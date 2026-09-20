@@ -244,10 +244,13 @@ export default function AIResearchPage() {
         })),
         groundedness: Math.round(apiResponse.confidence * 100),
         chartData: null,
-        isLive: true,
+        // A rate-limited response still has real retrieved evidence, but it must
+        // never be presented as a completed AI-generated answer.
+        isLive: apiResponse.generationStatus !== 'rate_limited',
+        generationStatus: apiResponse.generationStatus || 'ready',
       };
       setMessages(prev => [...prev, { role: 'assistant', response: resp }]);
-      setApiMode('live');
+      setApiMode(apiResponse.generationStatus === 'rate_limited' ? 'limited' : 'live');
     } catch (error) {
       setMessages(prev => [...prev, { role: 'assistant', response: {
         answer: `The live evidence service is currently unavailable: ${error.message}. Please retry after the AI Backend is deployed and connected.`,
@@ -272,7 +275,7 @@ export default function AIResearchPage() {
         subtitle="Natural-language intelligence, authoritative peer-reviewed papers, and collaborative student field notes."
         actions={
           <div className="flex items-center gap-2">
-            <DemoBanner message={apiMode === 'live' ? 'LIVE RAG · APPROVED SOURCES' : apiMode === 'checking' ? 'AI BACKEND CONNECTION PENDING' : 'AI BACKEND UNAVAILABLE'} />
+            <DemoBanner message={apiMode === 'live' ? 'LIVE RAG · APPROVED SOURCES' : apiMode === 'limited' ? 'RAG SOURCES READY · AI RETRY SOON' : apiMode === 'checking' ? 'AI BACKEND CONNECTION PENDING' : 'AI BACKEND UNAVAILABLE'} />
             <button
               onClick={() => setActiveTab('assistant')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all
