@@ -16,7 +16,7 @@ services:
       - key: FRONTEND_ORIGINS
         sync: false
       - key: FRONTEND_ORIGIN_REGEX
-        value: https://.*\\.vercel\\.app
+        value: https://.*\.vercel\.app
       - key: EMBEDDING_MODEL
         value: gemini-embedding-001
       - key: EMBEDDING_DIMENSIONS

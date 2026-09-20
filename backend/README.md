@@ -50,7 +50,7 @@ Use this start command:
 uvicorn app.main:app --host 0.0.0.0 --port $PORT
 ```
 
-In Vercel, set the frontend project's **Root Directory** to `SIH-2k26-master/land-intelligence-platform`. Then add a production environment variable, rebuild, and redeploy:
+Keep the Vercel project's **Root Directory** empty/default. This repository's root `vercel.json` already builds `land-intelligence-platform` and publishes `land-intelligence-platform/dist`. Then add a production environment variable, rebuild, and redeploy:
 
 ```text
 VITE_API_BASE_URL=https://your-backend-host.example/api/v1

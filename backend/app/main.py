@@ -23,6 +23,16 @@ def health():
     return {"status": "healthy", "service": "BhuNirnay API"}
 
 
+@app.get("/ready")
+def ready():
+    """Check deployment configuration without invoking an external AI request."""
+    try:
+        Settings.from_environment().validate_rag()
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    return {"status": "ready", "service": "BhuNirnay API"}
+
+
 @app.get("/api/v1/dashboard")
 def dashboard(state: str | None = None, district: str | None = None):
     selected = [item for item in DISTRICTS if (not state or item.state == state) and (not district or item.name == district)]
