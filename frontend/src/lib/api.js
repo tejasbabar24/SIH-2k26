@@ -4,6 +4,7 @@
  */
 
 const BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+const AI_BASE = (import.meta.env.VITE_AI_API_URL || 'http://localhost:8000/api/v1').replace(/\/$/, '');
 
 async function request(path, options = {}) {
   const res = await fetch(`${BASE}${path}`, {
@@ -60,4 +61,17 @@ export function demoApprove(token) {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
   });
+}
+
+/** Evidence-grounded RAG research query. This is intentionally a separate service
+ * from the OTP/auth backend so Gemini and Supabase service secrets stay isolated. */
+export async function queryResearchAssistant(question, userRole = 'researcher') {
+  const res = await fetch(`${AI_BASE}/ai/query`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question, userRole }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || `AI research request failed (${res.status})`);
+  return data;
 }

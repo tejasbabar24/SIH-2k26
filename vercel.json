@@ -1,6 +1,6 @@
 {
-  "buildCommand": "cd land-intelligence-platform && npm install && npm run build",
-  "outputDirectory": "land-intelligence-platform/dist",
+  "buildCommand": "cd frontend && npm ci && npm run build",
+  "outputDirectory": "frontend/dist",
   "rewrites": [
     {
       "source": "/(.*)",

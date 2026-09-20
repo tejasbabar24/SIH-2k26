@@ -6,10 +6,9 @@ import {
 import { Bot, Send, ChevronRight, CheckCircle, AlertTriangle, BookOpen, ExternalLink, FileText, Download, Copy, Plus, Users, Check } from 'lucide-react';
 import { PageLayout } from '../components/layout/Layout';
 import { PageHeader, Card, GovButton, DemoBanner, Badge } from '../components/ui';
-import { researchQuestions, researchResponses } from '../data/research';
+import { researchQuestions } from '../data/research';
 import { useApp } from '../App';
-
-const TYPING_DELAY = 1800;
+import { queryResearchAssistant } from '../lib/api';
 
 const researchPapers = [
   {
@@ -83,7 +82,7 @@ function SourceBadge({ source }) {
   const { showToast } = useApp();
   const copyCitation = (format = 'APA') => {
     const text = format === 'APA'
-      ? `${source.name} (${source.year}). Spatial Cadastre & Land Dynamics Database. Government of India.`
+      ? `${source.name}. ${source.pageLabel || source.year}. ${source.url || 'Official government source.'}`
       : `@misc{geosynk_${source.year}, author = {${source.name}}, title = {National Land Cadastre Data}, year = {${source.year}}}`;
     navigator.clipboard?.writeText(text);
     showToast(`${format} citation copied to clipboard`, 'success');
@@ -92,8 +91,13 @@ function SourceBadge({ source }) {
   return (
     <div className="flex items-center gap-2 py-1.5 border-b border-gray-100 last:border-0">
       <CheckCircle size={13} className="text-[#1a6b3c] shrink-0" />
-      <span className="text-xs text-gray-700">{source.name}</span>
-      <span className="ml-auto text-[10px] text-gray-400 font-medium mr-2">{source.year}</span>
+      <div className="min-w-0">
+        {source.url && source.url !== '#'
+          ? <a href={source.url} target="_blank" rel="noreferrer" className="text-xs text-[#0f2d5c] hover:underline">{source.name}</a>
+          : <span className="text-xs text-gray-700">{source.name}</span>}
+        <p className="text-[10px] text-gray-400">{source.pageLabel || source.year}</p>
+      </div>
+      {source.url && source.url !== '#' && <ExternalLink size={12} className="ml-auto text-[#1a6b3c] shrink-0" />}
       <button
         onClick={() => copyCitation('APA')}
         title="Copy APA Citation"
@@ -182,8 +186,8 @@ function MessageBubble({ msg }) {
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
                   <BookOpen size={11} /> SOURCES
                 </p>
-                <span className="text-[10px] font-bold text-[#1a6b3c] bg-green-50 px-2 py-0.5 rounded">
-                  {resp.groundedness}% DATA GROUNDED
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${resp.isLive ? 'text-[#1a6b3c] bg-green-50' : 'text-amber-700 bg-amber-50'}`}>
+                  {resp.isLive ? `${resp.groundedness}% RAG GROUNDED` : 'AI UNAVAILABLE'}
                 </span>
               </div>
               {resp.sources.map((s, i) => <SourceBadge key={i} source={s} />)}
@@ -192,8 +196,8 @@ function MessageBubble({ msg }) {
         </div>
 
         <p className="text-[10px] text-gray-400 mt-1.5 ml-1 flex items-center gap-1">
-          <AlertTriangle size={10} className="text-amber-400" />
-          Simulated AI response for prototype. Not real AI.
+          {resp.isLive ? <CheckCircle size={10} className="text-green-600" /> : <AlertTriangle size={10} className="text-amber-500" />}
+          {resp.isLive ? 'Live response grounded in approved government sources.' : 'The live evidence service is unavailable. No simulated answer was shown.'}
         </p>
       </div>
     </div>
@@ -206,6 +210,7 @@ export default function AIResearchPage() {
   const [messages, setMessages] = useState([]);
   const [inputVal, setInputVal] = useState('');
   const [typing, setTyping] = useState(false);
+  const [apiMode, setApiMode] = useState('checking');
   const [notebookNotes, setNotebookNotes] = useState(initialNotebookNotes);
   const [showAddNote, setShowAddNote] = useState(false);
   const chatEndRef = useRef(null);
@@ -216,7 +221,7 @@ export default function AIResearchPage() {
 
   useEffect(() => { scrollToBottom(); }, [messages, typing]);
 
-  const sendMessage = (question) => {
+  const sendMessage = async (question) => {
     const q = question || inputVal.trim();
     if (!q) return;
     setInputVal('');
@@ -224,19 +229,34 @@ export default function AIResearchPage() {
     setMessages(prev => [...prev, { role: 'user', content: q }]);
     setTyping(true);
 
-    setTimeout(() => {
-      const resp = researchResponses[q] || {
-        answer: `Based on available land records and spatial data for the query: "${q}"\n\nThis query matches partial data in our knowledge base. For a detailed analysis, please try one of the predefined research questions or consult the full analytics dashboard for regional land-use statistics.\n\nOur system has indexed data from ISRO Bhuvan, State Revenue Departments, and the National Cadastral Survey 2023-24 covering all 28+ states.`,
-        sources: [
-          { name: "National Cadastral Survey 2023-24", verified: true, year: "2024" },
-          { name: "State Revenue Dept Records", verified: true, year: "2024" },
-        ],
-        groundedness: 72.0,
-        chartData: null
+    try {
+      const apiResponse = await queryResearchAssistant(q);
+      const resp = {
+        answer: apiResponse.answer,
+        sources: apiResponse.sources.map(source => ({
+          name: source.title,
+          year: String(source.year),
+          verified: source.status === 'approved',
+          url: source.sourceUrl || source.fileUrl,
+          pageLabel: source.pageRanges?.length
+            ? source.pageRanges.map(range => `pp. ${range.pageStart}-${range.pageEnd}`).join(', ')
+            : `pp. ${source.pageStart}-${source.pageEnd}`,
+        })),
+        groundedness: Math.round(apiResponse.confidence * 100),
+        chartData: null,
+        isLive: true,
       };
-      setTyping(false);
       setMessages(prev => [...prev, { role: 'assistant', response: resp }]);
-    }, TYPING_DELAY);
+      setApiMode('live');
+    } catch (error) {
+      setMessages(prev => [...prev, { role: 'assistant', response: {
+        answer: `The live evidence service is currently unavailable: ${error.message}. Please retry after the AI Backend is deployed and connected.`,
+        sources: [], groundedness: 0, chartData: null, isLive: false,
+      } }]);
+      setApiMode('unavailable');
+    } finally {
+      setTyping(false);
+    }
   };
 
   const handleSubmit = (e) => {
@@ -252,6 +272,7 @@ export default function AIResearchPage() {
         subtitle="Natural-language intelligence, authoritative peer-reviewed papers, and collaborative student field notes."
         actions={
           <div className="flex items-center gap-2">
+            <DemoBanner message={apiMode === 'live' ? 'LIVE RAG · APPROVED SOURCES' : apiMode === 'checking' ? 'AI BACKEND CONNECTION PENDING' : 'AI BACKEND UNAVAILABLE'} />
             <button
               onClick={() => setActiveTab('assistant')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all
