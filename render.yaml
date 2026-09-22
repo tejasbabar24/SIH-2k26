@@ -1,8 +1,8 @@
 services:
   - type: web
-    name: bhunirnay-api
+    name: bhunirnay-ai-api
     runtime: python
-    rootDir: backend
+    rootDir: AI Backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
@@ -15,8 +15,6 @@ services:
         sync: false
       - key: FRONTEND_ORIGINS
         sync: false
-      - key: FRONTEND_ORIGIN_REGEX
-        value: https://.*\.vercel\.app
       - key: EMBEDDING_MODEL
         value: gemini-embedding-001
       - key: EMBEDDING_DIMENSIONS
