@@ -1,1 +1,0 @@
-"""BhuNirnay application services."""
